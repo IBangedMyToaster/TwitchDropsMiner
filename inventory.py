@@ -184,9 +184,9 @@ class BaseDrop:
             # Add claim to info logs
             logger.info(msg= (
                 f"Claimed drop: {claim_text_single_line}|"
-                f"{self.campaign.game.name};"
-                f"{self.rewards_text()};"
-                f"{self.campaign.claimed_drops}/{self.campaign.total_drops}"
+                f"game={self.campaign.game.name};"
+                f"drop={self.rewards_text()};"
+                f"campaign_progress={self.campaign.claimed_drops}/{self.campaign.total_drops}"
             ))
 
             self._twitch.gui.tray.notify(claim_text, _("gui", "tray", "notification_title"))

@@ -106,212 +106,212 @@ jobs:
           name: Twitch.Drops.Miner.Windows
           path: Twitch.Drops.Miner.Windows.zip
 
-  macos:
-    name: macOS
-    runs-on: macos-latest
-    needs:
-      - validate
+  # macos:
+  #   name: macOS
+  #   runs-on: macos-latest
+  #   needs:
+  #     - validate
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Set up variables
-        id: vars
-        run: |
-          echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+  #     - name: Set up variables
+  #       id: vars
+  #       run: |
+  #         echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Append git revision to project version
-        run: |
-          sed -i '' -E "s/^(__version__\s*=\s*\"[^\"]+)/\1.${{steps.vars.outputs.sha_short}}/" version.py
+  #     - name: Append git revision to project version
+  #       run: |
+  #         sed -i '' -E "s/^(__version__\s*=\s*\"[^\"]+)/\1.${{steps.vars.outputs.sha_short}}/" version.py
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{env.PYTHON_VERSION}}
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: ${{env.PYTHON_VERSION}}
 
-      - name: Install project dependencies
-        run: |
-          python3 -m pip install wheel
-          python3 -m pip install -r requirements.txt
+  #     - name: Install project dependencies
+  #       run: |
+  #         python3 -m pip install wheel
+  #         python3 -m pip install -r requirements.txt
 
-      - name: Install PyInstaller
-        run: |
-          python3 -m pip install pyinstaller
+  #     - name: Install PyInstaller
+  #       run: |
+  #         python3 -m pip install pyinstaller
 
-      - name: Create portable executable
-        run: |
-          pyinstaller build.spec --noconfirm
+  #     - name: Create portable executable
+  #       run: |
+  #         pyinstaller build.spec --noconfirm
 
-      - name: Create release folder and Zip
-        run: |
-          FOLDER="Twitch Drops Miner"
-          mkdir -p "$FOLDER"
-          cp -r "dist/Twitch Drops Miner (by DevilXD).app" "$FOLDER/"
-          cp manual.txt "$FOLDER/"
-          zip -r Twitch.Drops.Miner.MacOS.zip "$FOLDER"
+  #     - name: Create release folder and Zip
+  #       run: |
+  #         FOLDER="Twitch Drops Miner"
+  #         mkdir -p "$FOLDER"
+  #         cp -r "dist/Twitch Drops Miner (by DevilXD).app" "$FOLDER/"
+  #         cp manual.txt "$FOLDER/"
+  #         zip -r Twitch.Drops.Miner.MacOS.zip "$FOLDER"
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: error
-          name: Twitch.Drops.Miner.MacOS
-          path: Twitch.Drops.Miner.MacOS.zip
+  #     - name: Upload build artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         if-no-files-found: error
+  #         name: Twitch.Drops.Miner.MacOS
+  #         path: Twitch.Drops.Miner.MacOS.zip
 
-  linux-pyinstaller:
-    name: Linux (PyInstaller) (${{matrix.arch}})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86_64
-            runner: ubuntu-22.04
-          - arch: aarch64
-            runner: ubuntu-22.04-arm
-    runs-on: ${{matrix.runner}}
-    needs:
-      - validate
+  # linux-pyinstaller:
+  #   name: Linux (PyInstaller) (${{matrix.arch}})
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - arch: x86_64
+  #           runner: ubuntu-22.04
+  #         - arch: aarch64
+  #           runner: ubuntu-22.04-arm
+  #   runs-on: ${{matrix.runner}}
+  #   needs:
+  #     - validate
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Set up variables
-        id: vars
-        run: |
-          echo "sha_short=$(git rev-parse --short HEAD)" >> "${GITHUB_OUTPUT}"
+  #     - name: Set up variables
+  #       id: vars
+  #       run: |
+  #         echo "sha_short=$(git rev-parse --short HEAD)" >> "${GITHUB_OUTPUT}"
 
-      - name: Append git revision to project version
-        run: |
-          sed -ri "s/^__version__\s*=\s*\"[^\"]+/\0.${{steps.vars.outputs.sha_short}}/" version.py
+  #     - name: Append git revision to project version
+  #       run: |
+  #         sed -ri "s/^__version__\s*=\s*\"[^\"]+/\0.${{steps.vars.outputs.sha_short}}/" version.py
 
-      # Ensure Python version
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{env.PYTHON_VERSION}}
+  #     # Ensure Python version
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: ${{env.PYTHON_VERSION}}
 
-      - name: Install system dependencies
-        run: |
-          sudo apt update
-          sudo apt install libgirepository1.0-dev gir1.2-ayatanaappindicator3-0.1 libayatana-appindicator3-1 python3-tk
+  #     - name: Install system dependencies
+  #       run: |
+  #         sudo apt update
+  #         sudo apt install libgirepository1.0-dev gir1.2-ayatanaappindicator3-0.1 libayatana-appindicator3-1 python3-tk
 
-      - name: Install project dependencies
-        run: |
-          python3 -m pip install wheel
-          python3 -m pip install -r requirements.txt
+  #     - name: Install project dependencies
+  #       run: |
+  #         python3 -m pip install wheel
+  #         python3 -m pip install -r requirements.txt
 
-      - name: Install PyInstaller
-        run: |
-          python3 -m pip install pyinstaller
+  #     - name: Install PyInstaller
+  #       run: |
+  #         python3 -m pip install pyinstaller
 
-      # NOTE: Remove this step if/once libxft gets updated to 2.3.5 or newer on Ubuntu 22.04, which currently has 2.3.4.
-      - name: Build a recent version of libXft
-        run: |
-          mkdir -p /tmp/libXft
-          cd /tmp/libXft
-          curl -fL https://xorg.freedesktop.org/releases/individual/lib/libXft-2.3.9.tar.xz -o libXft.tar.xz
-          sha256sum libXft.tar.xz
-          tar xvf libXft.tar.xz
-          cd libXft-*
-          ./configure --prefix=/tmp/libXft --sysconfdir=/etc --disable-static
-          make
-          make install-strip
+  #     # NOTE: Remove this step if/once libxft gets updated to 2.3.5 or newer on Ubuntu 22.04, which currently has 2.3.4.
+  #     - name: Build a recent version of libXft
+  #       run: |
+  #         mkdir -p /tmp/libXft
+  #         cd /tmp/libXft
+  #         curl -fL https://xorg.freedesktop.org/releases/individual/lib/libXft-2.3.9.tar.xz -o libXft.tar.xz
+  #         sha256sum libXft.tar.xz
+  #         tar xvf libXft.tar.xz
+  #         cd libXft-*
+  #         ./configure --prefix=/tmp/libXft --sysconfdir=/etc --disable-static
+  #         make
+  #         make install-strip
 
-      - name: Create portable executable
-        run: |
-          LD_LIBRARY_PATH=/tmp/libXft/lib xvfb-run --auto-servernum pyinstaller build.spec
+  #     - name: Create portable executable
+  #       run: |
+  #         LD_LIBRARY_PATH=/tmp/libXft/lib xvfb-run --auto-servernum pyinstaller build.spec
 
-      - name: Show PyInstaller warnings
-        run: |
-          cat build/build/warn-build.txt || true
+  #     - name: Show PyInstaller warnings
+  #       run: |
+  #         cat build/build/warn-build.txt || true
 
-      - name: Create release folder
-        run: |
-          folder='Twitch Drops Miner'
-          mkdir "${folder}"
-          cp manual.txt dist/* "${folder}"
-          7z a 'Twitch.Drops.Miner.Linux.PyInstaller-${{matrix.arch}}.zip' "${folder}"
+  #     - name: Create release folder
+  #       run: |
+  #         folder='Twitch Drops Miner'
+  #         mkdir "${folder}"
+  #         cp manual.txt dist/* "${folder}"
+  #         7z a 'Twitch.Drops.Miner.Linux.PyInstaller-${{matrix.arch}}.zip' "${folder}"
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: error
-          name: Twitch.Drops.Miner.Linux.PyInstaller-${{matrix.arch}}
-          path: Twitch.Drops.Miner.Linux.PyInstaller-${{matrix.arch}}.zip
+  #     - name: Upload build artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         if-no-files-found: error
+  #         name: Twitch.Drops.Miner.Linux.PyInstaller-${{matrix.arch}}
+  #         path: Twitch.Drops.Miner.Linux.PyInstaller-${{matrix.arch}}.zip
 
-  linux-appimage:
-    name: Linux (AppImage) (${{matrix.arch}})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86_64
-            runner: ubuntu-22.04
-          - arch: aarch64
-            runner: ubuntu-22.04-arm
-    runs-on: ${{matrix.runner}}
-    needs:
-      - validate
+  # linux-appimage:
+  #   name: Linux (AppImage) (${{matrix.arch}})
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - arch: x86_64
+  #           runner: ubuntu-22.04
+  #         - arch: aarch64
+  #           runner: ubuntu-22.04-arm
+  #   runs-on: ${{matrix.runner}}
+  #   needs:
+  #     - validate
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Set up variables
-        id: vars
-        run: |
-          echo "app_version=$(python3 -c 'from version import __version__ as v; print(v)')" >> "${GITHUB_OUTPUT}"
-          echo "sha_short=$(git rev-parse --short HEAD)" >> "${GITHUB_OUTPUT}"
+  #     - name: Set up variables
+  #       id: vars
+  #       run: |
+  #         echo "app_version=$(python3 -c 'from version import __version__ as v; print(v)')" >> "${GITHUB_OUTPUT}"
+  #         echo "sha_short=$(git rev-parse --short HEAD)" >> "${GITHUB_OUTPUT}"
 
-      - name: Append git revision to project version
-        run: |
-          sed -ri "s/^__version__\s*=\s*\"[^\"]+/\0.${{steps.vars.outputs.sha_short}}/" version.py
+  #     - name: Append git revision to project version
+  #       run: |
+  #         sed -ri "s/^__version__\s*=\s*\"[^\"]+/\0.${{steps.vars.outputs.sha_short}}/" version.py
 
-      - name: Install system dependencies
-        run: |
-          sudo apt update
-          sudo apt install libgirepository1.0-dev gir1.2-ayatanaappindicator3-0.1 libayatana-appindicator3-1
+  #     - name: Install system dependencies
+  #       run: |
+  #         sudo apt update
+  #         sudo apt install libgirepository1.0-dev gir1.2-ayatanaappindicator3-0.1 libayatana-appindicator3-1
 
-      - name: Install appimage-builder
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install wheel
-          python3 -m pip install setuptools setuptools_scm
-          # TODO: Switch to a stable release if/when a version newer than 1.1.0 is released.
-          python3 -m pip install git+https://github.com/AppImageCrafters/appimage-builder.git@1a8794d3c89f288fbd82b9accd7c0b74611147d5
+  #     - name: Install appimage-builder
+  #       run: |
+  #         python3 -m pip install --upgrade pip
+  #         python3 -m pip install wheel
+  #         python3 -m pip install setuptools setuptools_scm
+  #         # TODO: Switch to a stable release if/when a version newer than 1.1.0 is released.
+  #         python3 -m pip install git+https://github.com/AppImageCrafters/appimage-builder.git@1a8794d3c89f288fbd82b9accd7c0b74611147d5
 
-      - name: Create AppImage
-        env:
-          ARCH: ${{matrix.arch}}
-          ARCH_APT: ${{matrix.arch == 'x86_64' && 'amd64' || 'arm64'}}
-          APP_VERSION: ${{steps.vars.outputs.app_version}}.${{steps.vars.outputs.sha_short}}
-          PYTHON_VERSION: ${{env.PYTHON_VERSION}}
-        run: |
-          appimage-builder --recipe appimage/AppImageBuilder.yml
+  #     - name: Create AppImage
+  #       env:
+  #         ARCH: ${{matrix.arch}}
+  #         ARCH_APT: ${{matrix.arch == 'x86_64' && 'amd64' || 'arm64'}}
+  #         APP_VERSION: ${{steps.vars.outputs.app_version}}.${{steps.vars.outputs.sha_short}}
+  #         PYTHON_VERSION: ${{env.PYTHON_VERSION}}
+  #       run: |
+  #         appimage-builder --recipe appimage/AppImageBuilder.yml
 
-      - name: Create release folder
-        run: |
-          folder='Twitch Drops Miner'
-          mkdir "${folder}"
-          cp *.AppImage manual.txt "${folder}"
-          7z a 'Twitch.Drops.Miner.Linux.AppImage-${{matrix.arch}}.zip' "${folder}"
+  #     - name: Create release folder
+  #       run: |
+  #         folder='Twitch Drops Miner'
+  #         mkdir "${folder}"
+  #         cp *.AppImage manual.txt "${folder}"
+  #         7z a 'Twitch.Drops.Miner.Linux.AppImage-${{matrix.arch}}.zip' "${folder}"
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: error
-          name: Twitch.Drops.Miner.Linux.AppImage-${{matrix.arch}}
-          path: Twitch.Drops.Miner.Linux.AppImage-${{matrix.arch}}.zip
+  #     - name: Upload build artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         if-no-files-found: error
+  #         name: Twitch.Drops.Miner.Linux.AppImage-${{matrix.arch}}
+  #         path: Twitch.Drops.Miner.Linux.AppImage-${{matrix.arch}}.zip
 
   update_releases_page:
     name: Upload builds to Releases
     if: github.event_name != 'pull_request'
     needs:
       - windows
-      - linux-pyinstaller
-      - linux-appimage
-      - macos
+      # - linux-pyinstaller
+      # - linux-appimage
+      # - macos
     runs-on: ubuntu-latest
     permissions:
       contents: write

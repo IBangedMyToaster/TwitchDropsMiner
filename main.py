@@ -9,6 +9,7 @@ if __name__ == "__main__":
     import io
     import os
     import sys
+    import ctypes
     import signal
     import asyncio
     import logging
@@ -28,10 +29,26 @@ if __name__ == "__main__":
     from version import __version__
     from exceptions import CaptchaRequired
     from utils import lock_file, resource_path, set_root_icon
-    from constants import LOGGING_LEVELS, SELF_PATH, FILE_FORMATTER, LOG_PATH, LOCK_PATH
+    from constants import (
+        LOGGING_LEVELS,
+        SELF_PATH,
+        FILE_FORMATTER,
+        OUTPUT_FORMATTER,
+        LOG_PATH,
+        LOCK_PATH,
+    )
 
     if TYPE_CHECKING:
         from _typeshed import SupportsWrite
+
+    console_mode = "--console" in sys.argv[1:]
+    if console_mode and sys.platform == "win32":
+        kernel32 = ctypes.windll.kernel32
+        if not kernel32.AttachConsole(-1):
+            kernel32.AllocConsole()
+        sys.stdin = open("CONIN$", "r", encoding="utf-8")
+        sys.stdout = open("CONOUT$", "w", encoding="utf-8")
+        sys.stderr = open("CONOUT$", "w", encoding="utf-8")
 
     warnings.simplefilter("default", ResourceWarning)
 
@@ -52,10 +69,15 @@ if __name__ == "__main__":
             self._message: io.StringIO = io.StringIO()
 
         def _print_message(self, message: str, file: SupportsWrite[str] | None = None) -> None:
+            if console_mode:
+                super()._print_message(message, file)
+                return
             self._message.write(message)
             # print(message, file=self._message)
 
         def exit(self, status: int = 0, message: str | None = None) -> NoReturn:
+            if console_mode:
+                super().exit(status, message)
             try:
                 super().exit(status, message)  # sys.exit(2)
             finally:
@@ -65,6 +87,7 @@ if __name__ == "__main__":
         _verbose: int
         _debug_ws: bool
         _debug_gql: bool
+        console: bool
         log: bool
         tray: bool
         dump: bool
@@ -98,17 +121,20 @@ if __name__ == "__main__":
     # handle input parameters
     # NOTE: parser output is shown via message box
     # we also need a dummy invisible window for the parser
-    root = tk.Tk()
-    root.overrideredirect(True)
-    root.withdraw()
-    set_root_icon(root, resource_path("icons/pickaxe.ico"))
-    root.update()
+    root = None
+    if not console_mode:
+        root = tk.Tk()
+        root.overrideredirect(True)
+        root.withdraw()
+        set_root_icon(root, resource_path("icons/pickaxe.ico"))
+        root.update()
     parser = Parser(
         SELF_PATH.name,
         description="A program that allows you to mine timed drops on Twitch.",
     )
     parser.add_argument("--version", action="version", version=f"v{__version__}")
     parser.add_argument("-v", dest="_verbose", action="count", default=0)
+    parser.add_argument("--console", action="store_true", help="Run without showing the GUI.")
     parser.add_argument("--tray", action="store_true")
     parser.add_argument("--log", action="store_true")
     parser.add_argument("--dump", action="store_true")
@@ -124,13 +150,15 @@ if __name__ == "__main__":
     try:
         settings = Settings(args)
     except Exception:
-        messagebox.showerror(
-            "Settings error",
-            f"There was an error while loading the settings file:\n\n{traceback.format_exc()}"
-        )
+        error = f"There was an error while loading the settings file:\n\n{traceback.format_exc()}"
+        if console_mode:
+            print(error, file=sys.stderr)
+        else:
+            messagebox.showerror("Settings error", error)
         sys.exit(4)
     # dummy window isn't needed anymore
-    root.destroy()
+    if root is not None:
+        root.destroy()
     # get rid of unneeded objects
     del root, parser
 
@@ -150,6 +178,10 @@ if __name__ == "__main__":
             logging.getLogger().addHandler(logging.NullHandler())
         logger = logging.getLogger("TwitchDrops")
         logger.setLevel(settings.logging_level)
+        if settings.console:
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setFormatter(OUTPUT_FORMATTER)
+            logger.addHandler(handler)
         if settings.log:
             handler = logging.FileHandler(LOG_PATH)
             handler.setFormatter(FILE_FORMATTER)
@@ -180,14 +212,15 @@ if __name__ == "__main__":
                 loop.remove_signal_handler(signal.SIGTERM)
             client.print(_("gui", "status", "exiting"))
             await client.shutdown()
-        if not client.gui.close_requested:
+        if not settings.console and not client.gui.close_requested:
             # user didn't request the closure
             client.gui.tray.change_icon("error")
             client.print(_("status", "terminated"))
             client.gui.status.update(_("gui", "status", "terminated"))
             # notify the user about the closure
             client.gui.grab_attention(sound=True)
-        await client.gui.wait_until_closed()
+        if not settings.console:
+            await client.gui.wait_until_closed()
         # save the application state
         # NOTE: we have to do it after wait_until_closed,
         # because the user can alter some settings between app termination and closing the window

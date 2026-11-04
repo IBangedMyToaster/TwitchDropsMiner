@@ -7,6 +7,7 @@ import shlex
 import ctypes
 import asyncio
 import logging
+import getpass
 import plistlib
 import tkinter as tk
 from pathlib import Path
@@ -561,6 +562,9 @@ class LoginForm:
             self._token_entry.clear()
 
     async def wait_for_login_press(self) -> None:
+        if self._manager._twitch.settings.console:
+            input("Press Enter to continue...")
+            return
         self._confirm.clear()
         try:
             self._button.config(state="normal")
@@ -570,6 +574,11 @@ class LoginForm:
 
     async def ask_login(self) -> LoginData:
         self.update(_("gui", "login", "required"), None)
+        if self._manager._twitch.settings.console:
+            username = input("Twitch username: ")
+            password = getpass.getpass("Twitch password: ")
+            token = input("Two-factor code (if required): ")
+            return LoginData(username.strip(), password, token.strip())
         # ensure the window isn't hidden into tray when this runs
         self._manager.grab_attention(sound=False)
         while True:
@@ -597,6 +606,10 @@ class LoginForm:
 
     async def ask_enter_code(self, page_url: URL, user_code: str) -> None:
         self.update(_("gui", "login", "required"), None)
+        if self._manager._twitch.settings.console:
+            print(f"Open {page_url} and enter this code: {user_code}")
+            webopen(page_url)
+            return
         # ensure the window isn't hidden into tray when this runs
         self._manager.grab_attention(sound=False)
         self._manager.print(_("gui", "login", "request"))
@@ -2327,11 +2340,12 @@ class GUIManager:
             self._orig_theme_name = ''
         self.apply_theme(self._twitch.settings.dark_mode)
         # stay hidden in tray if needed, otherwise show the window when everything's ready
-        if self._twitch.settings.tray and sys.platform != "darwin":
-            # NOTE: this starts the tray icon thread
-            self._root.after_idle(self.tray.minimize)
-        else:
-            self._root.after_idle(self._root.deiconify)
+        if not self._twitch.settings.console:
+            if self._twitch.settings.tray and sys.platform != "darwin":
+                # NOTE: this starts the tray icon thread
+                self._root.after_idle(self.tray.minimize)
+            else:
+                self._root.after_idle(self._root.deiconify)
 
     # https://stackoverflow.com/questions/56329342/tkinter-treeview-background-tag-not-working
     def _fixed_map(self, option):
